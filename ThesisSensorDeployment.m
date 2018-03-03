@@ -8,9 +8,9 @@ nsteps = 1e1; % time interval
 volfrac = 0.3; % volume fraction
 
 % Set parameters
-nelx = 4; % horizontal number of elements (left to right)
-nely = 4; % vertical number of elements (top to down)
-penal = 3; % polynomial order to define density-young's modulus relationship
+nelx = 80; % horizontal number of elements (left to right)
+nely = 20; % vertical number of elements (top to down)
+penal = 4; % polynomial order to define density-young's modulus relationship
 E0 = 1; % young's modulus at density=1
 Emin = 1e-9; % young's modulus at density=0, keep this small
 M0 = 1;
@@ -21,62 +21,81 @@ nu = 0.3; % poisson's ratio
 test = 1000;
 DReal = zeros(1,test);
 AvgShortDist = zeros(1,test);
-Rstore = zeros(nelx,test);
+Rstore = zeros(nelx+1,test);
 
 
 for j = 1:test
 % load structure.mat; % load xPhys
 
-nf = nelx; % number of forces
+nf = nelx+1; % number of forces
 num_observer = nf; % number of observers
 
 % Left size of the beam is fixed to the ground
-fixeddofs = [1:2*(nely+1)];
+fixeddofsx = [2*(1:nelx+1)*(nely+1)-1];
+fixeddofsy = [2*(1:nelx+1)*(nely+1)];
+fixeddofs = [fixeddofsx;fixeddofsy];
+fixeddofs = fixeddofs(:)';
 alldofs = [1:2*(nely+1)*(nelx+1)];
 freedofs = setdiff(alldofs,fixeddofs);
 p = size(freedofs,2);
 
 % set observer
-S = zeros(num_observer,p); 
+S = zeros(num_observer,p);
+%S(:,2*(0:nelx)*nely+1) = eye(nf);
+
 % S(:,randperm(p,num_observer))=eye(num_observer);
 %S(:,2*(1:nelx)*(nely+1)) = eye(nelx); % [ORIGNAL] put y-axis sensors at the bottom of the beam
 % R = randperm(p/2,num_observer); %creates a vector nelx by 1 of a unique random integer between 1 and p/2
 % R = R.*2; %multiplies the random integers by 2 to create only even integers
 
-R = randi(5,4,1);
+R = randi(nely,nelx+1,1);
 Rstore(:,j) = R;
 % R = [1,4,3,5]';
-R = R'*2+((1:nelx)-1)*(nely+1)*2;
+R = (R.*2-1);
+R = R';
+R = R +((1:(nelx+1))-1)*(nely)*2; %Take random DOFs, make odd for x, 
+%R = R-1; %selects random nodes in x
+
+S(:,R(1:end)) = eye(nf); %for all rows of S, a one is placed in the column specified by the random number of R
 
 
-S(:,R(1:end)) = eye(nelx); %for all rows of S, a one is placed in the column specified by the random number of R
-
-
-Fb = -1*ones(nelx,1);
+Fb = ones(nf,1);
 Sp = zeros(p,nf); % Sp specifies the loading location
-Sp(2*(1:nelx)*(nely+1),:) = eye(nelx); % put loads at the bottom of the beam
-
+Sp(2*(0:nelx)*nely+1,:) = eye(nf); %put shear loads at top of the beam
 % Sptemp = Sp';
-B = Sp(:,1)+Sp(:,2)+Sp(:,3)+Sp(:,4);%+Sp(:,5)+Sp(:,6)+Sp(:,7);%+Sp(:,8); %creates 1 vector with all Sp information
+B = Sp(:,1)+Sp(:,2)+Sp(:,3)+Sp(:,4)+Sp(:,5)+Sp(:,6)+Sp(:,7)+Sp(:,8)+Sp(:,9)+Sp(:,10)+...
+    Sp(:,11)+Sp(:,12)+Sp(:,13)+Sp(:,14)+Sp(:,15)+Sp(:,16)+Sp(:,17)+Sp(:,18)+Sp(:,19)+Sp(:,20)+...
+    Sp(:,21)+Sp(:,22)+Sp(:,23)+Sp(:,24)+Sp(:,25)+Sp(:,26)+Sp(:,27)+Sp(:,28)+Sp(:,29)+Sp(:,30)+...
+    Sp(:,31)+Sp(:,32)+Sp(:,33)+Sp(:,34)+Sp(:,35)+Sp(:,36)+Sp(:,37)+Sp(:,38)+Sp(:,39)+Sp(:,40)+...
+    Sp(:,41)+Sp(:,42)+Sp(:,43)+Sp(:,44)+Sp(:,45)+Sp(:,46)+Sp(:,47)+Sp(:,48)+Sp(:,49)+Sp(:,50)+...
+    Sp(:,51)+Sp(:,52)+Sp(:,53)+Sp(:,54)+Sp(:,55)+Sp(:,56)+Sp(:,57)+Sp(:,58)+Sp(:,59)+Sp(:,60)+...
+    Sp(:,61)+Sp(:,62)+Sp(:,63)+Sp(:,64)+Sp(:,65)+Sp(:,66)+Sp(:,67)+Sp(:,68)+Sp(:,69)+Sp(:,70)+...
+    Sp(:,71)+Sp(:,72)+Sp(:,73)+Sp(:,74)+Sp(:,75)+Sp(:,76)+Sp(:,77)+Sp(:,78)+Sp(:,79)+Sp(:,80)+Sp(:,81); %creates 1 vector with all Sp information
 %NOTE: Must change B and C with every change in number of elements
 B = B';
-C = S(1,:)+S(2,:)+S(3,:)+S(4,:);%+S(5,:)+S(6,:)+S(7,:);%+S(8,:); %creates 1 vector with all S information
+C = S(1,:)+S(2,:)+S(3,:)+S(4,:)+S(5,:)+S(6,:)+S(7,:)+S(8,:)+S(9,:)+S(10,:)+...
+    S(11,:)+S(12,:)+S(13,:)+S(14,:)+S(15,:)+S(16,:)+S(17,:)+S(18,:)+S(19,:)+S(20,:)+...
+    S(21,:)+S(22,:)+S(23,:)+S(24,:)+S(25,:)+S(26,:)+S(27,:)+S(28,:)+S(29,:)+S(30,:)+...
+    S(31,:)+S(32,:)+S(33,:)+S(34,:)+S(35,:)+S(36,:)+S(37,:)+S(38,:)+S(39,:)+S(40,:)+...
+    S(41,:)+S(42,:)+S(43,:)+S(44,:)+S(45,:)+S(46,:)+S(47,:)+S(48,:)+S(49,:)+S(50,:)+...
+    S(51,:)+S(52,:)+S(53,:)+S(54,:)+S(55,:)+S(56,:)+S(57,:)+S(58,:)+S(59,:)+S(60,:)+...
+    S(61,:)+S(62,:)+S(63,:)+S(64,:)+S(65,:)+S(66,:)+S(67,:)+S(68,:)+S(69,:)+S(70,:)+...
+    S(71,:)+S(72,:)+S(73,:)+S(74,:)+S(75,:)+S(76,:)+S(77,:)+S(78,:)+S(79,:)+S(80,:)+S(81,:);%+S(5,:)+S(6,:)+S(7,:);%+S(8,:); %creates 1 vector with all S information
 %NOTE: Must change B and C with every change in number of elements
-strucS = zeros(p/nelx,nelx);
-strucSp = zeros(p/nelx,nelx);
-for i = 0:nelx-1
-    strucS(:,i+1) = C(:,i*p/nelx+1:(i+1)*p/nelx); %creates physical structure resembling real set up of sensors
-    strucSp(:,i+1) = B(:,i*p/nelx+1:(i+1)*p/nelx); %"..." of loads
-    i = i+1;
+strucS = zeros(2*nely,nelx+1);
+strucSp = zeros(2*nely,nelx+1);
+for i = 1:nf
+    strucS(:,i) = C(:,(i-1)*2*nely+1:(i)*2*nely); %creates physical structure resembling real set up of sensors
+    strucSp(:,i) = B(:,(i-1)*2*nely+1:(i)*2*nely); %"..." of loads
 end
 
 [rowS,colS] = find(strucS); %finds location of sensors in the structure
 [rowSp,colSp] = find(strucSp);%finds location of loads in the structure
-rowS = rowS/2; %convert each node having 2 DOF to a single point
-rowSp = rowSp/2;
+% rowS = rowS/2; %convert each node having 2 DOF to a single point
+% rowSp = rowSp/2;
 
-Scoords = zeros(nelx,2);
-Spcoords = zeros(nelx,2);
+Scoords = zeros(nf,2);
+Spcoords = zeros(nf,2);
 
 Scoords = [rowS colS]; %coordinates of the sensors
 Spcoords = [rowSp colSp];%coordinates of the loads
@@ -87,7 +106,9 @@ AvgShortDist(1,j) = mean(min(Distance')); %min goes by smallest in each row for 
 % AvgShortDist = mean(ShortDist); %finds average of the shortest distances from each sensor to a load
 
 % define material density
-xPhys = rand(nely,nelx);
+%xPhys = rand(nely,nelx); %      CHANGED
+load('x.mat','x');
+xPhys = x;
 xPhys = xPhys/sum(xPhys(:))*volfrac*nelx*nely;
 % xPhys = volfrac*ones(nely,nelx); 
 % xPhys(2:end-1,2:end-1)=0;
@@ -119,7 +140,7 @@ Kb = K(freedofs,freedofs);
 Mb = M(freedofs,freedofs);
 
 D = S*inv(Mb)*Sp;
-DReal(1,j) = trace(inv(D'*D+1e-6*eye(4))); %what does the eye(x) mean?
+DReal(1,j) = trace(inv(D'*D+1e-6*eye(nf))); %what does the eye(x) mean?
 C1 = -S*inv(Mb)*Kb;
 C = [zeros(num_observer,p), C1];
 % M2 follows corollary 5 eq 35
@@ -142,4 +163,5 @@ end
 plot(AvgShortDist,DReal,'.','MarkerSize',20)
 xlabel('Average Distance Between Sensor and Input');
 ylabel('Measure of Input Estimation Error');
+
 
